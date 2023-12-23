@@ -18,7 +18,7 @@ public class ProductRestController {
     }
 
     @GetMapping("/products")
-    //@PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public List<Product> products(){
         return productsRepo.findAll();
     }

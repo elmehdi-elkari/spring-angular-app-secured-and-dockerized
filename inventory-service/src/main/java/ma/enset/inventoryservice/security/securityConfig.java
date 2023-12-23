@@ -29,7 +29,7 @@ public class securityConfig {
 
         return httpSecurity
                 .cors(Customizer.withDefaults())
-                .authorizeHttpRequests(ar->ar.requestMatchers("/products/**").permitAll())
+                //.authorizeHttpRequests(ar->ar.requestMatchers("/products/**").permitAll())
                 .authorizeHttpRequests(ar->ar.anyRequest().authenticated())
                 .oauth2ResourceServer(
                         //o2->o2.jwt(Customizer.withDefaults())
