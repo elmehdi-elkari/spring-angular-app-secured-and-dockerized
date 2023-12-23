@@ -1,0 +1,6 @@
+.idea
+temp/
+*.log
+*.iws
+*.iml
+*.ipr
