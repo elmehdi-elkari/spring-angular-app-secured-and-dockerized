@@ -92,6 +92,23 @@ services:
     depends_on:
       postgres-service:
           condition: service_healthy
+  customer-front-thymeleaf-app:
+    build: ./customer-front-thymeleaf-app
+    container_name: customer-front-thymeleaf-app
+    ports:
+      - '1111:1111'
+    expose:
+      - '1111'
+    restart: always
+    depends_on:
+      - keycloak
+    environment:
+      - KEYCLOAK_REDIRECT_URI=http://localhost:1111/login/oauth2/code/sdia-customers-app
+      - KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/sdia-realm
+      - KEYCLOAK_AUTH=http://localhost:8080/realms/sdia-realm/protocol/openid-connect/auth
+      - KEYCLOAK_AUTH_TOKEN=http://keycloak:8080/realms/sdia-realm/protocol/openid-connect/token
+      - JWT_JWK_SET_URI=http://keycloak:8080/realms/sdia-realm/protocol/openid-connect/certs
+      - INVENTORY_SERVICE_BASE_URI=http://enset-inventory-service:2222
 volumes:
   mysql_data:
   postgres_data:
