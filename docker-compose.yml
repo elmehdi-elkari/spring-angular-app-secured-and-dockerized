@@ -1,4 +1,23 @@
 services:
+  mysql_db_thymeleaf:
+    image: mariadb:latest
+    ports:
+      - "3307:3306"
+    container_name: mysql_db_thymeleaf
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: costumers_db #Database name
+      MYSQL_USER: admin #Database user
+      MYSQL_PASSWORD: admin #Database password
+    volumes:
+      - mysql_data:/var/lib/mysqlthymeleaf
+    restart:
+      always
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
   mysql-db-inventory:
     image: mariadb:10.6
     container_name: mysql-db-inventory
@@ -27,22 +46,7 @@ services:
       PMA_HOST: mysql-db-inventory
       PMA_PORT: 3306
       PMA_ARBITRARY: 1
-  inventory-service:
-    build: ./inventory-service
-    container_name: inventory-service
-    ports:
-      - '2222:2222'
-    expose:
-      - '2222'
-    restart: always
-    depends_on:
-      mysql-db-inventory:
-        condition : service_healthy
 
-    environment:
-      - DB_URL=jdbc:mysql://mysql-db-inventory:3306/inventory-db
-      #- JWT_ISSUER_URI=http://localhost:8080/realms/sdia-realm
-      #- JWT_JWK_SET_URI=http://keycloak:8080/realms/sdia-realm/protocol/openid-connect/certs
   postgres-service:
     image: postgres
     container_name: postgres-service
@@ -69,6 +73,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: azer
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     container_name: keycloak
@@ -92,6 +97,23 @@ services:
     depends_on:
       postgres-service:
           condition: service_healthy
+
+  inventory-service:
+    build: ./inventory-service
+    container_name: inventory-service
+    ports:
+      - '2222:2222'
+    expose:
+      - '2222'
+    restart: always
+    depends_on:
+      mysql-db-inventory:
+        condition: service_healthy
+    environment:
+      - DB_URL=jdbc:mysql://mysql-db-inventory:3306/inventory-db
+      - JWT_ISSUER_URI=http://localhost:8080/realms/sdia-realm
+      - JWT_JWK_SET_URI=http://keycloak:8080/realms/sdia-realm/protocol/openid-connect/certs
+
   customer-front-thymeleaf-app:
     build: ./customer-front-thymeleaf-app
     container_name: customer-front-thymeleaf-app
@@ -103,12 +125,20 @@ services:
     depends_on:
       - keycloak
     environment:
+      - DB_URL=jdbc:mysql://mysql_db_thymeleaf:3306/costumers_db
       - KEYCLOAK_REDIRECT_URI=http://localhost:1111/login/oauth2/code/sdia-customers-app
-      - KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/sdia-realm
+      #- KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/sdia-realm
       - KEYCLOAK_AUTH=http://localhost:8080/realms/sdia-realm/protocol/openid-connect/auth
+      # Pb !!
       - KEYCLOAK_AUTH_TOKEN=http://keycloak:8080/realms/sdia-realm/protocol/openid-connect/token
       - JWT_JWK_SET_URI=http://keycloak:8080/realms/sdia-realm/protocol/openid-connect/certs
-      - INVENTORY_SERVICE_BASE_URI=http://enset-inventory-service:2222
+      - INVENTORY_SERVICE_BASE_URI=http://inventory-service:2222
+
+
+      #- DB_URL=jdbc:mysql://mysql_db_thymeleaf:3306/costumers_db
+      #- KEYCLOAK_AUTH_TOKEN=http://localhost:8080/realms/auth_apps/protocol/openid-connect/token
+      #- ISSUER_URI=http://localhost:8080/realms/auth_apps
+
   customer-front-angular-app:
     build: ./customer-front-angular-app
     container_name: customer-front-angular-app
